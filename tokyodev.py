@@ -6,7 +6,7 @@ from crawlee.crawlers import (
     PlaywrightPreNavCrawlingContext,
 )
 
-
+TOKYO_DEV_BASE_URL = 'https://www.tokyodev.com'
 async def main() -> None:
     crawler = PlaywrightCrawler(
         # Limit the crawl to max requests. Remove or increase it for crawling all links.
@@ -40,9 +40,21 @@ async def main() -> None:
             job_items = await li.query_selector_all('div[data-collapsable-list-target="item"]')
             jobs = []
             for job in job_items:
-                job_title_el = await  job.query_selector('h4 > a')
-                job_title = await  job_title_el.inner_text()
-                jobs.append(job_title)
+                job_title_el = await job.query_selector('h4 > a')
+                job_title = await job_title_el.inner_text()
+                job_link = await job_title_el.get_attribute('href')
+                job_tags = []
+                job_tags_elem = await job.query_selector_all('div > a')
+                for tag in job_tags_elem:
+                    tag = await tag.inner_text()
+                    job_tags.append(tag)
+
+                job = {
+                    'title': job_title,
+                    'tags': job_tags,
+                    'link': TOKYO_DEV_BASE_URL + job_link
+                }
+                jobs.append(job)
             data.append({'title': title, 'jobs': jobs})
 
         # Push the extracted data to the default dataset. In local configuration,
