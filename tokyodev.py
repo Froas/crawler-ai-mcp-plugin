@@ -78,4 +78,5 @@ async def main() -> None:
 
 
 if __name__ == '__main__':
+    print("started TOKYO dev scratch")
     asyncio.run(main())
