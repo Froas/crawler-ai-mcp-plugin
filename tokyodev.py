@@ -74,7 +74,7 @@ async def main() -> None:
         context.log.info(f'Navigating to {context.request.url} ...')
 
     # Run the crawler with the initial list of URLs.
-    await crawler.run(['https://www.tokyodev.com/jobs/backend'])
+    await crawler.run([TOKYO_DEV_BASE_URL + '/jobs/backend'])
 
 
 if __name__ == '__main__':
