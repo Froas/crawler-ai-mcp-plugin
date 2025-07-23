@@ -1,0 +1,30 @@
+{
+  "id": "IwuZQuQnG0TAJzG",
+  "unique_key": "second_post_request_a3219738-e6d1-47f7-ae31-c003bca9e9a0",
+  "order_no": null,
+  "handled_at": "2025-07-17 02:57:55.016725+00:00",
+  "request": {
+    "url": "https://www2.jpx.co.jp/tseHpFront/JJK020010Action.do;jsessionid=00B11CD09F0EE52A255F89C8F3D3F8A21",
+    "method": "POST",
+    "headers": {
+      "content-type": "application/x-www-form-urlencoded",
+      "referer": "https://www2.jpx.co.jp/tseHpFront/JJK020010Action.do;jsessionid=00B11CD09F0EE52A255F89C8F3D3F8A21",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "x-second-request": "a3219738-e6d1-47f7-ae31-c003bca9e9a0"
+    },
+    "payload": "dspSsuPd=500&szkbuChkbxMapOut=011%3EPrime%3C012%3EStandard%3C013%3EGrowth%3C008%3ETOKYO&ListShow=ListShow&sniMtGmnId=&dspSsuPdMapOut=10%3E10%3C50%3E50%3C100%3E100%3C200%3E200%3C&mgrMiTxtBx=&eqMgrCd=&szkbuChkbx=011",
+    "user_data": {
+      "__crawlee": {
+        "state": 3,
+        "crawlDepth": 1
+      },
+      "label": "SECOND_REQUEST"
+    },
+    "retry_count": 0,
+    "no_retry": false,
+    "loaded_url": "https://www2.jpx.co.jp/tseHpFront/JJK020010Action.do;jsessionid=00B11CD09F0EE52A255F89C8F3D3F8A21",
+    "handled_at": "2025-07-17 02:57:55.016725+00:00",
+    "unique_key": "second_post_request_a3219738-e6d1-47f7-ae31-c003bca9e9a0",
+    "id": "IwuZQuQnG0TAJzG"
+  }
+}

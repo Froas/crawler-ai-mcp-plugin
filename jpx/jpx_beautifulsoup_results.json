@@ -1,0 +1,13 @@
+{
+  "success": true,
+  "method": "beautifulsoup_crawler",
+  "pages_processed": 1,
+  "total_companies": 0,
+  "expected_total_items": 0,
+  "scraped_at": "2025-07-17T11:57:55.016473",
+  "statistics": {
+    "segments": {},
+    "industries": {}
+  },
+  "companies": []
+}

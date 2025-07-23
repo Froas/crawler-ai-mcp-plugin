@@ -7,7 +7,7 @@ import re
 
 def jpx_two_step_request():
     """
-    Оригинальная рабочая функция (одна страница)
+    Original working function (single page)
     """
     session = requests.Session()
     session.headers.update({
@@ -18,7 +18,7 @@ def jpx_two_step_request():
         'Connection': 'keep-alive'
     })
 
-    # Параметры form-data точно как в Insomnia
+    # Form-data parameters exactly as in Insomnia
     form_data = {
         'dspSsuPd': '500',
         'szkbuChkbxMapOut': '011>Prime<012>Standard<013>Growth<008>TOKYO',
@@ -31,30 +31,30 @@ def jpx_two_step_request():
     }
 
     try:
-        # ПЕРВЫЙ ЗАПРОС - открытие страницы поиска
-        print("ЗАПРОС 1: Открытие страницы поиска...")
+        # FIRST REQUEST - open search page
+        print("REQUEST 1: Opening search page...")
         url = "https://www2.jpx.co.jp/tseHpFront/JJK020010Action.do;jsessionid=00B11CD09F0EE52A255F89C8F3D3F8A21"
 
         response1 = session.post(url, data=form_data)
         response1.raise_for_status()
 
-        print(f"Запрос 1 - Статус: {response1.status_code}")
+        print(f"Request 1 - Status: {response1.status_code}")
 
-        # ВТОРОЙ ЗАПРОС - получение результатов
-        print("\nЗАПРОС 2: Получение результатов...")
+        # SECOND REQUEST - get results
+        print("\nREQUEST 2: Getting results...")
         response2 = session.post(url, data=form_data)
         response2.raise_for_status()
 
-        print(f"Запрос 2 - Статус: {response2.status_code}")
-        print(f"Запрос 2 - Размер ответа: {len(response2.content)} байт")
+        print(f"Request 2 - Status: {response2.status_code}")
+        print(f"Request 2 - Response size: {len(response2.content)} bytes")
 
-        # Парсим результаты
+        # Parse results
         soup = BeautifulSoup(response2.content, 'html.parser')
         enhanced_data = parse_companies_from_soup(soup)
 
-        print(f"\n✅ Найдено компаний: {len(enhanced_data)}")
+        print(f"\n✅ Found companies: {len(enhanced_data)}")
 
-        # Сохраняем результат
+        # Save result
         result = {
             'success': True,
             'method': 'two_step_request',
@@ -65,13 +65,13 @@ def jpx_two_step_request():
         return result
 
     except Exception as e:
-        print(f"Ошибка: {e}")
+        print(f"Error: {e}")
         return {'success': False, 'error': str(e)}
 
 
 def jpx_with_pagination(max_pages=None, delay=1, search_params=None):
     """
-    Версия с pagination на основе рабочего кода
+    Version with pagination based on working code
     """
     if search_params is None:
         search_params = {
@@ -103,38 +103,38 @@ def jpx_with_pagination(max_pages=None, delay=1, search_params=None):
     try:
         while True:
             print(f"\n{'=' * 60}")
-            print(f"📄 СТРАНИЦА {current_page}")
+            print(f"📄 PAGE {current_page}")
             if total_pages:
-                print(f"📊 Прогресс: {current_page}/{total_pages}")
+                print(f"📊 Progress: {current_page}/{total_pages}")
             if total_items:
-                print(f"🎯 Всего компаний: {total_items}")
+                print(f"🎯 Total companies: {total_items}")
             print(f"{'=' * 60}")
 
-            # Готовим параметры для текущей страницы
+            # Prepare parameters for current page
             form_data = search_params.copy()
 
-            # ПЕРВЫЙ ЗАПРОС
-            print(f"ЗАПРОС 1: Инициализация страницы {current_page}...")
+            # FIRST REQUEST
+            print(f"REQUEST 1: Initializing page {current_page}...")
             url = "https://www2.jpx.co.jp/tseHpFront/JJK020010Action.do;jsessionid=00B11CD09F0EE52A255F89C8F3D3F8A21"
 
             response1 = session.post(url, data=form_data)
             response1.raise_for_status()
 
-            # ВТОРОЙ ЗАПРОС
-            print(f"ЗАПРОС 2: Получение данных страницы {current_page}...")
+            # SECOND REQUEST
+            print(f"REQUEST 2: Getting data for page {current_page}...")
 
-            # Для страниц после первой используем другую логику
+            # For pages after the first one, use different logic
             if current_page > 1:
-                # Парсим первый ответ для получения формы результатов
+                # Parse first response to get results form
                 soup_temp = BeautifulSoup(response1.content, 'html.parser')
 
-                # Ищем форму JJK020030Form (форма результатов с пагинацией)
+                # Look for JJK020030Form (results form with pagination)
                 form_030 = soup_temp.find('form', attrs={'name': 'JJK020030Form'})
 
                 if form_030:
-                    print(f"Найдена форма JJK020030Form, используем для страницы {current_page}")
+                    print(f"Found JJK020030Form, using for page {current_page}")
 
-                    # Собираем все скрытые поля из формы
+                    # Collect all hidden fields from the form
                     pagination_form_data = {}
                     hidden_inputs = form_030.find_all('input', {'type': 'hidden'})
 
@@ -144,48 +144,48 @@ def jpx_with_pagination(max_pages=None, delay=1, search_params=None):
                         if name:
                             pagination_form_data[name] = value
 
-                    # Добавляем параметры для пагинации
+                    # Add pagination parameters
                     pagination_form_data.update({
                         'Transition': 'Transition',
                         'pageNo': str(current_page),
                         'currentPage': str(current_page)
                     })
 
-                    # Используем URL для результатов
+                    # Use results URL
                     url_results = "https://www2.jpx.co.jp/tseHpFront/JJK020030Action.do"
                     response2 = session.post(url_results, data=pagination_form_data)
                 else:
-                    # Fallback: используем оригинальную форму
-                    print(f"Форма JJK020030Form не найдена, используем оригинальную")
+                    # Fallback: use original form
+                    print(f"JJK020030Form not found, using original form")
                     response2 = session.post(url, data=form_data)
             else:
-                # Первая страница: стандартный второй запрос
+                # First page: standard second request
                 response2 = session.post(url, data=form_data)
 
             response2.raise_for_status()
-            print(f"Запрос 2 - Статус: {response2.status_code}, Размер: {len(response2.content)} байт")
+            print(f"Request 2 - Status: {response2.status_code}, Size: {len(response2.content)} bytes")
 
-            # Сохраняем HTML каждой страницы
+            # Save HTML of each page
             with open(f'jpx_page_{current_page}.html', 'w', encoding='utf-8') as f:
                 f.write(response2.text)
 
-            # Парсим компании с текущей страницы
+            # Parse companies from current page
             soup = BeautifulSoup(response2.content, 'html.parser')
             page_companies = parse_companies_from_soup(soup)
 
-            print(f"📊 Найдено компаний на странице {current_page}: {len(page_companies)}")
+            print(f"📊 Found companies on page {current_page}: {len(page_companies)}")
 
-            # Добавляем номер страницы к каждой компании
+            # Add page number to each company
             for company in page_companies:
                 company['page'] = current_page
 
-            # Добавляем в общий список
+            # Add to overall list
             all_companies.extend(page_companies)
 
-            # Обновляем статистику
+            # Update statistics
             update_statistics(page_companies, all_statistics)
 
-            # Получаем информацию о пагинации
+            # Get pagination information
             pagination_info = extract_pagination_info(soup)
 
             if pagination_info:
@@ -193,56 +193,56 @@ def jpx_with_pagination(max_pages=None, delay=1, search_params=None):
                 total_pages = pagination_info.get('total_pages')
                 has_next = pagination_info.get('has_next_page', False)
 
-                print(f"\n📖 Пагинация:")
-                print(f"  Текущая страница: {pagination_info.get('current_page')}")
-                print(f"  Всего страниц: {total_pages}")
-                print(f"  Всего элементов: {total_items}")
-                print(f"  Есть следующая: {has_next}")
+                print(f"\n📖 Pagination:")
+                print(f"  Current page: {pagination_info.get('current_page')}")
+                print(f"  Total pages: {total_pages}")
+                print(f"  Total items: {total_items}")
+                print(f"  Has next: {has_next}")
 
-                # Проверяем условия продолжения
+                # Check continuation conditions
                 if not has_next or (total_pages and current_page >= total_pages):
-                    print("🏁 Достигнута последняя страница")
+                    print("🏁 Reached last page")
                     break
 
                 if max_pages and current_page >= max_pages:
-                    print(f"🛑 Достигнут лимит: {max_pages} страниц")
+                    print(f"🛑 Reached limit: {max_pages} pages")
                     break
 
                 if len(page_companies) == 0:
-                    print("🛑 Нет компаний на странице")
+                    print("🛑 No companies on page")
                     break
 
-                # Переходим к следующей странице
+                # Move to next page
                 current_page += 1
 
                 if delay > 0:
-                    print(f"⏱️ Задержка {delay} сек...")
+                    print(f"⏱️ Delay {delay} sec...")
                     time.sleep(delay)
 
             else:
-                print("📖 Пагинация не найдена")
+                print("📖 Pagination not found")
                 if len(page_companies) == 0:
-                    print("🛑 Нет компаний и пагинации")
+                    print("🛑 No companies and no pagination")
                     break
                 else:
-                    print("📄 Возможно, единственная страница")
+                    print("📄 Possibly single page")
                     break
 
-        # Финальные результаты
-        print(f"\n🎉 ЗАВЕРШЕНО!")
-        print(f"📊 Обработано страниц: {current_page}")
-        print(f"🏢 Всего компаний: {len(all_companies)}")
+        # Final results
+        print(f"\n🎉 COMPLETED!")
+        print(f"📊 Pages processed: {current_page}")
+        print(f"🏢 Total companies: {len(all_companies)}")
 
-        # Показываем статистику
+        # Show statistics
         show_final_statistics(all_statistics)
 
-        # Сохраняем результаты
+        # Save results
         result = save_results(all_companies, all_statistics, current_page, total_items)
 
         return result
 
     except Exception as e:
-        print(f"❌ Ошибка: {e}")
+        print(f"❌ Error: {e}")
         import traceback
         traceback.print_exc()
 
@@ -257,11 +257,11 @@ def jpx_with_pagination(max_pages=None, delay=1, search_params=None):
 
 def parse_companies_from_soup(soup):
     """
-    Парсит компании из soup (точно как в рабочем коде)
+    Parse companies from soup (exactly like in working code)
     """
     enhanced_data = []
 
-    # Ищем все скрытые поля с данными компаний
+    # Look for all hidden fields with company data
     hidden_inputs = soup.find_all('input', {'type': 'hidden'})
     company_records = {}
 
@@ -269,7 +269,7 @@ def parse_companies_from_soup(soup):
         name = hidden.get('name', '')
         value = hidden.get('value', '')
 
-        # Парсим поля формата ccJjCrpSelKekkLst_st[N].field
+        # Parse fields in format ccJjCrpSelKekkLst_st[N].field
         if 'ccJjCrpSelKekkLst_st[' in name and '].' in name:
             try:
                 start = name.find('[') + 1
@@ -286,19 +286,19 @@ def parse_companies_from_soup(soup):
             except (ValueError, IndexError):
                 continue
 
-    # Парсим видимые данные из таблицы
+    # Parse visible data from table
     tables = soup.find_all('table')
     company_data = []
 
     for table in tables:
         rows = table.find_all('tr')
-        for row in rows[1:]:  # Пропускаем заголовок
+        for row in rows[1:]:  # Skip header
             cells = row.find_all(['td', 'th'])
-            if len(cells) >= 4:  # Минимум код, название, сегмент, индустрия
+            if len(cells) >= 4:  # Minimum: code, name, segment, industry
                 code_cell = cells[0]
                 code_text = code_cell.get_text(strip=True)
 
-                if code_text.isdigit() and len(code_text) == 5:  # Код компании
+                if code_text.isdigit() and len(code_text) == 5:  # Company code
                     company_info = {
                         'code': code_text,
                         'name': cells[1].get_text(strip=True) if len(cells) > 1 else '',
@@ -308,7 +308,7 @@ def parse_companies_from_soup(soup):
                         'alerts': cells[5].get_text(strip=True) if len(cells) > 5 else '',
                     }
 
-                    # Ищем ссылки
+                    # Look for links
                     links = {}
                     for i, cell in enumerate(cells):
                         link = cell.find('a')
@@ -323,12 +323,12 @@ def parse_companies_from_soup(soup):
 
                     company_data.append(company_info)
 
-    # Объединяем данные из скрытых полей с видимыми данными
+    # Combine data from hidden fields with visible data
     for company in company_data:
         code = company['code']
         enhanced_company = company.copy()
 
-        # Добавляем данные из скрытых полей если найдены
+        # Add data from hidden fields if found
         for record in company_records.values():
             if record.get('eqMgrCd') == code:
                 enhanced_company['hidden_fields'] = record
@@ -336,10 +336,10 @@ def parse_companies_from_soup(soup):
 
         enhanced_data.append(enhanced_company)
 
-    # Если основной парсинг не дал результатов, используем только скрытые поля
+    # If main parsing didn't yield results, use only hidden fields
     if not enhanced_data and company_records:
         for index, record in sorted(company_records.items()):
-            if 'eqMgrCd' in record:  # Есть код компании
+            if 'eqMgrCd' in record:  # Has company code
                 company_info = {
                     'index': index,
                     'code': record.get('eqMgrCd', ''),
@@ -356,7 +356,7 @@ def parse_companies_from_soup(soup):
 
 def extract_pagination_info(soup):
     """
-    Извлекает информацию о пагинации из JPX
+    Extract pagination information from JPX
     """
     pagination_info = {
         'current_page': 1,
@@ -367,11 +367,11 @@ def extract_pagination_info(soup):
         'has_prev_page': False
     }
 
-    # Ищем div с классом pagingmenu
+    # Look for div with class pagingmenu
     paging_menu = soup.find('div', class_='pagingmenu')
 
     if paging_menu:
-        # Извлекаем информацию о количестве элементов "Display of 1-10 items/1622"
+        # Extract item count information "Display of 1-10 items/1622"
         left_div = paging_menu.find('div', class_='left')
         if left_div:
             text = left_div.get_text()
@@ -387,7 +387,7 @@ def extract_pagination_info(soup):
                 pagination_info['total_pages'] = (total_items + pagination_info['items_per_page'] - 1) // \
                                                  pagination_info['items_per_page']
 
-        # Ищем текущую страницу по классу "current"
+        # Look for current page by class "current"
         current_element = paging_menu.find('b', class_='current')
         if current_element:
             try:
@@ -395,12 +395,12 @@ def extract_pagination_info(soup):
             except ValueError:
                 pass
 
-        # Проверяем наличие кнопки "Next"
+        # Check for "Next" button
         next_div = paging_menu.find('div', class_='next_e')
         if next_div and next_div.find('a'):
             pagination_info['has_next_page'] = True
 
-        # Если текущая страница больше 1, то есть предыдущая
+        # If current page is greater than 1, there's a previous page
         if pagination_info['current_page'] > 1:
             pagination_info['has_prev_page'] = True
 
@@ -409,7 +409,7 @@ def extract_pagination_info(soup):
 
 def update_statistics(companies, all_statistics):
     """
-    Обновляет общую статистику
+    Update overall statistics
     """
     for company in companies:
         segment = company.get('market_segment', 'Unknown')
@@ -421,15 +421,15 @@ def update_statistics(companies, all_statistics):
 
 def show_final_statistics(all_statistics):
     """
-    Показывает финальную статистику
+    Show final statistics
     """
     if all_statistics['segments']:
-        print(f"\n📈 Статистика по сегментам:")
+        print(f"\n📈 Statistics by segments:")
         for segment, count in sorted(all_statistics['segments'].items()):
             print(f"  {segment}: {count}")
 
     if all_statistics['industries']:
-        print(f"\n🏭 Топ-10 индустрий:")
+        print(f"\n🏭 Top 10 industries:")
         top_industries = sorted(all_statistics['industries'].items(), key=lambda x: x[1], reverse=True)[:10]
         for industry, count in top_industries:
             print(f"  {industry}: {count}")
@@ -437,9 +437,9 @@ def show_final_statistics(all_statistics):
 
 def save_results(all_companies, all_statistics, pages_processed, total_items):
     """
-    Сохраняет результаты в файлы
+    Save results to files
     """
-    # Полные данные
+    # Full data
     result = {
         'success': True,
         'method': 'jpx_pagination_scraping',
@@ -455,9 +455,9 @@ def save_results(all_companies, all_statistics, pages_processed, total_items):
 
     with open('jpx_all_companies.json', 'w', encoding='utf-8') as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
-    print(f"\n💾 Полные данные: jpx_all_companies.json")
+    print(f"\n💾 Full data: jpx_all_companies.json")
 
-    # Упрощенные данные
+    # Simplified data
     simple_result = {
         'total_companies': len(all_companies),
         'expected_total': total_items,
@@ -478,60 +478,60 @@ def save_results(all_companies, all_statistics, pages_processed, total_items):
 
     with open('jpx_all_companies_simple.json', 'w', encoding='utf-8') as f:
         json.dump(simple_result, f, ensure_ascii=False, indent=2)
-    print(f"💾 Упрощенные данные: jpx_all_companies_simple.json")
+    print(f"💾 Simplified data: jpx_all_companies_simple.json")
 
     return result
 
 
 if __name__ == "__main__":
-    print("🚀 JPX SCRAPER (На основе рабочего кода)")
+    print("🚀 JPX SCRAPER (Based on working code)")
     print("=" * 60)
 
     mode = input(
-        "\nВыберите режим:\n1. Одна страница (быстро)\n2. Все страницы\n3. Ограниченное количество страниц\nВаш выбор (1-3): ").strip()
+        "\nSelect mode:\n1. Single page (fast)\n2. All pages\n3. Limited number of pages\nYour choice (1-3): ").strip()
 
     if mode == "1":
-        print("\n📄 РЕЖИМ: Одна страница")
+        print("\n📄 MODE: Single page")
         result = jpx_two_step_request()
 
         if result.get('success'):
-            print(f"\n🎉 УСПЕХ! Найдено компаний: {result.get('companies_count', 0)}")
+            print(f"\n🎉 SUCCESS! Found companies: {result.get('companies_count', 0)}")
         else:
-            print(f"\n❌ ОШИБКА: {result.get('error')}")
+            print(f"\n❌ ERROR: {result.get('error')}")
 
     elif mode == "2":
-        print("\n📚 РЕЖИМ: Все страницы")
-        delay = input("Задержка между запросами в секундах (по умолчанию 1): ").strip()
+        print("\n📚 MODE: All pages")
+        delay = input("Delay between requests in seconds (default 1): ").strip()
         delay = float(delay) if delay.replace('.', '').isdigit() else 1.0
 
-        print(f"⚠️ Это может занять много времени!")
-        confirm = input("Продолжить? (y/n): ").strip().lower()
+        print(f"⚠️ This may take a long time!")
+        confirm = input("Continue? (y/n): ").strip().lower()
 
         if confirm == 'y':
             result = jpx_with_pagination(max_pages=None, delay=delay)
 
             if result.get('success'):
-                print(f"\n🎉 УСПЕХ! Компаний: {result.get('total_companies', 0)}")
+                print(f"\n🎉 SUCCESS! Companies: {result.get('total_companies', 0)}")
             else:
-                print(f"\n⚠️ ЧАСТИЧНЫЙ РЕЗУЛЬТАТ: {result.get('companies_collected', 0)} компаний")
+                print(f"\n⚠️ PARTIAL RESULT: {result.get('companies_collected', 0)} companies")
 
     elif mode == "3":
-        print("\n📑 РЕЖИМ: Ограниченное количество")
+        print("\n📑 MODE: Limited number of pages")
 
-        max_pages = input("Максимум страниц: ").strip()
+        max_pages = input("Maximum pages: ").strip()
         max_pages = int(max_pages) if max_pages.isdigit() else 3
 
-        delay = input("Задержка в секундах (по умолчанию 1): ").strip()
+        delay = input("Delay in seconds (default 1): ").strip()
         delay = float(delay) if delay.replace('.', '').isdigit() else 1.0
 
         result = jpx_with_pagination(max_pages=max_pages, delay=delay)
 
         if result.get('success'):
-            print(f"\n🎉 УСПЕХ! Компаний: {result.get('total_companies', 0)}")
+            print(f"\n🎉 SUCCESS! Companies: {result.get('total_companies', 0)}")
         else:
-            print(f"\n⚠️ ЧАСТИЧНЫЙ РЕЗУЛЬТАТ: {result.get('companies_collected', 0)} компаний")
+            print(f"\n⚠️ PARTIAL RESULT: {result.get('companies_collected', 0)} companies")
 
     else:
-        print("❌ Неверный выбор")
+        print("❌ Invalid choice")
 
-    print(f"\n✅ Готово!")
+    print(f"\n✅ Done!")

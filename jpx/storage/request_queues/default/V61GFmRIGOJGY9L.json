@@ -1,0 +1,28 @@
+{
+  "id": "V61GFmRIGOJGY9L",
+  "unique_key": "search_page_all_pages_4f80e077-742f-44f9-a029-a1c587d990cb",
+  "order_no": null,
+  "handled_at": "2025-07-17 02:57:54.965395+00:00",
+  "request": {
+    "url": "https://www2.jpx.co.jp/tseHpFront/JJK020010Action.do;jsessionid=00B11CD09F0EE52A255F89C8F3D3F8A21",
+    "method": "POST",
+    "headers": {
+      "content-type": "application/x-www-form-urlencoded",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "x-initial-request": "4f80e077-742f-44f9-a029-a1c587d990cb"
+    },
+    "payload": "dspSsuPd=500&szkbuChkbxMapOut=011%3EPrime%3C012%3EStandard%3C013%3EGrowth%3C008%3ETOKYO&ListShow=ListShow&sniMtGmnId=&dspSsuPdMapOut=10%3E10%3C50%3E50%3C100%3E100%3C200%3E200%3C&mgrMiTxtBx=&eqMgrCd=&szkbuChkbx=011",
+    "user_data": {
+      "__crawlee": {
+        "state": 3
+      },
+      "label": "SEARCH_PAGE"
+    },
+    "retry_count": 0,
+    "no_retry": false,
+    "loaded_url": "https://www2.jpx.co.jp/tseHpFront/JJK020010Action.do;jsessionid=00B11CD09F0EE52A255F89C8F3D3F8A21",
+    "handled_at": "2025-07-17 02:57:54.965395+00:00",
+    "unique_key": "search_page_all_pages_4f80e077-742f-44f9-a029-a1c587d990cb",
+    "id": "V61GFmRIGOJGY9L"
+  }
+}
