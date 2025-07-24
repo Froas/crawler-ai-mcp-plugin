@@ -5,9 +5,7 @@ import json
 
 def jpx_two_step_request():
     """
-    Двухэтапный запрос как в Insomnia
-    1. Первый запрос - открывает страницу поиска
-    2. Второй запрос - получает результаты
+    Two-step request approach (as in Insomnia)
     """
     session = requests.Session()
     session.headers.update({
@@ -18,7 +16,7 @@ def jpx_two_step_request():
         'Connection': 'keep-alive'
     })
 
-    # Параметры form-data точно как в Insomnia
+    # Form data with same parameters as in Insomnia
     form_data = {
         'dspSsuPd': '500',
         'szkbuChkbxMapOut': '011>Prime<012>Standard<013>Growth<008>TOKYO',
@@ -31,60 +29,57 @@ def jpx_two_step_request():
     }
 
     try:
-        # ПЕРВЫЙ ЗАПРОС - открытие страницы поиска
-        print("ЗАПРОС 1: Открытие страницы поиска...")
+        # Step 1: Open page
+        print("Request 1: Open page...")
         url = "https://www2.jpx.co.jp/tseHpFront/JJK020010Action.do;jsessionid=00B11CD09F0EE52A255F89C8F3D3F8A21"
 
         response1 = session.post(url, data=form_data)
         response1.raise_for_status()
 
-        print(f"Запрос 1 - Статус: {response1.status_code}")
-        print(f"Запрос 1 - URL: {response1.url}")
+        print(f"Request 1 - Status: {response1.status_code}")
+        print(f"Request 1 - URL: {response1.url}")
 
-        # Сохраняем первый ответ (страница поиска)
         with open('jpx_step1_search_page.html', 'w', encoding='utf-8') as f:
             f.write(response1.text)
-        print("Первый ответ сохранен в jpx_step1_search_page.html")
+        print("Saved first step to jpx_step1_search_page.html")
 
-        # ВТОРОЙ ЗАПРОС - получение результатов
-        print("\nЗАПРОС 2: Получение результатов...")
+        # Step 2: Get results
+        print("\nRequest 2: Getting results...")
 
-        # Используем тот же URL и те же параметры
         response2 = session.post(url, data=form_data)
         response2.raise_for_status()
 
-        print(f"Запрос 2 - Статус: {response2.status_code}")
-        print(f"Запрос 2 - URL: {response2.url}")
-        print(f"Запрос 2 - Размер ответа: {len(response2.content)} байт")
+        print(f"Request 2 - Status: {response2.status_code}")
+        print(f"Request 2 - URL: {response2.url}")
+        print(f"Request 2 - Size: {len(response2.content)} bytes")
 
-        # Сохраняем второй ответ (результаты)
+        # Save HTML response
         with open('jpx_step2_results.html', 'w', encoding='utf-8') as f:
             f.write(response2.text)
-        print("Второй ответ сохранен в jpx_step2_results.html")
+        print("Saved to jpx_step2_results.html")
 
-        # Парсим результаты
+        # Parse HTML content
         soup = BeautifulSoup(response2.content, 'html.parser')
 
-        # Проверяем, есть ли данные
+        # Find all tables
         tables = soup.find_all('table')
-        print(f"\nНайдено таблиц: {len(tables)}")
+        print(f"\nFound tables: {len(tables)}")
 
-        # Ищем таблицы с данными компаний
+        # Extract company data
         company_data = []
         for i, table in enumerate(tables):
             rows = table.find_all('tr')
-            if len(rows) > 1:  # Есть данные кроме заголовка
-                print(f"Таблица {i + 1}: {len(rows)} строк")
+            if len(rows) > 1:
+                print(f"Table {i + 1}: {len(rows)} rows")
 
-                # Пытаемся найти таблицу с результатами поиска
-                # Обычно это таблица с кодами компаний и названиями
+                # Process each row
                 for j, row in enumerate(rows):
                     cells = row.find_all(['td', 'th'])
-                    if len(cells) >= 2:  # Минимум код и название
+                    if len(cells) >= 2:  # Minimum code and name
                         row_data = []
                         for cell in cells:
                             text = cell.get_text(strip=True)
-                            # Также сохраняем ссылки
+                            # Also save links
                             link = cell.find('a')
                             if link and link.get('href'):
                                 row_data.append({
@@ -94,37 +89,37 @@ def jpx_two_step_request():
                             else:
                                 row_data.append(text)
 
-                        if any(str(cell).strip() for cell in row_data if isinstance(cell, str)):  # Есть непустые данные
+                        if any(str(cell).strip() for cell in row_data if isinstance(cell, str)):  # Has non-empty data
                             company_data.append({
                                 'table': i,
                                 'row': j,
                                 'data': row_data
                             })
 
-        # Проверяем, получили ли мы результаты
+        # Check if we got results
         if company_data:
-            print(f"\n✅ Найдено записей с данными: {len(company_data)}")
+            print(f"\n✅ Found data records: {len(company_data)}")
 
-            # Показываем первые несколько записей
-            print("\nПример данных:")
+            # Show first few records
+            print("\nSample data:")
             for i, record in enumerate(company_data[:5]):
-                print(f"Запись {i + 1}: {record['data']}")
+                print(f"Record {i + 1}: {record['data']}")
         else:
-            print("\n❌ Данные компаний не найдены")
+            print("\n❌ Company data not found")
 
-            # Проверяем, что вообще есть в ответе
+            # Check what's in the response
             title = soup.find('title')
             if title:
-                print(f"Заголовок страницы: {title.get_text()}")
+                print(f"Page title: {title.get_text()}")
 
-            # Ищем любой текст, который может указывать на результаты
+            # Look for any text that might indicate results
             content_divs = soup.find_all(['div', 'p'], class_=True)
             for div in content_divs[:5]:
                 text = div.get_text(strip=True)
                 if text and len(text) > 10:
-                    print(f"Содержимое: {text[:100]}...")
+                    print(f"Content: {text[:100]}...")
 
-        # Сохраняем структурированные данные
+        # Save structured data
         result = {
             'success': True,
             'method': 'two_step_request',
@@ -139,34 +134,34 @@ def jpx_two_step_request():
 
         with open('jpx_final_data.json', 'w', encoding='utf-8') as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
-        print("\nФинальные данные сохранены в jpx_final_data.json")
+        print("\nFinal data saved to jpx_final_data.json")
 
         return result
 
     except requests.exceptions.RequestException as e:
         error_result = {
             'success': False,
-            'error': f"HTTP ошибка: {str(e)}"
+            'error': f"HTTP error: {str(e)}"
         }
-        print(f"Ошибка запроса: {e}")
+        print(f"Request error: {e}")
         return error_result
     except Exception as e:
         error_result = {
             'success': False,
-            'error': f"Общая ошибка: {str(e)}"
+            'error': f"General error: {str(e)}"
         }
-        print(f"Общая ошибка: {e}")
+        print(f"General error: {e}")
         return error_result
 
 
 def jpx_simple_request():
     """
-    Простой запрос как в Insomnia (оставляем для сравнения)
+    Simple request as in Insomnia (keeping for comparison)
     """
-    # URL с jsessionid (как в Insomnia)
+    # URL with jsessionid (as in Insomnia)
     url = "https://www2.jpx.co.jp/tseHpFront/JJK020010Action.do;jsessionid=00B11CD09F0EE52A255F89C8F3D3F8A21"
 
-    # Точно такие же параметры как в Insomnia
+    # Exact same parameters as in Insomnia
     form_data = {
         'dspSsuPd': '500',
         'szkbuChkbxMapOut': '011>Prime<012>Standard<013>Growth<008>TOKYO',
@@ -178,7 +173,7 @@ def jpx_simple_request():
         'szkbuChkbx': '011'
     }
 
-    # Заголовки как в браузере
+    # Headers as in browser
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -190,41 +185,41 @@ def jpx_simple_request():
     }
 
     try:
-        print("Отправка простого POST запроса...")
+        print("Sending simple POST request...")
         response = requests.post(url, data=form_data, headers=headers, timeout=30)
         response.raise_for_status()
 
-        print(f"Статус ответа: {response.status_code}")
-        print(f"Размер ответа: {len(response.content)} байт")
+        print(f"Response status: {response.status_code}")
+        print(f"Response size: {len(response.content)} bytes")
 
-        # Сохраняем raw HTML
+        # Save raw HTML
         with open('jpx_simple_response.html', 'w', encoding='utf-8') as f:
             f.write(response.text)
-        print("HTML сохранен в jpx_simple_response.html")
+        print("HTML saved to jpx_simple_response.html")
 
         return {'success': True, 'method': 'simple'}
 
     except Exception as e:
-        print(f"Ошибка простого запроса: {e}")
+        print(f"Simple request error: {e}")
         return {'success': False, 'error': str(e)}
 
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("ДВУХЭТАПНЫЙ ЗАПРОС (как в Insomnia)")
+    print("TWO-STEP REQUEST (as in Insomnia)")
     print("=" * 60)
     result = jpx_two_step_request()
 
     if result.get('success'):
-        print(f"\n🎉 УСПЕХ!")
-        print(f"📊 Найдено записей: {result.get('company_records', 0)}")
-        print(f"📋 Таблиц: {result.get('tables_count', 0)}")
+        print(f"\n🎉 SUCCESS!")
+        print(f"📊 Records found: {result.get('company_records', 0)}")
+        print(f"📋 Tables: {result.get('tables_count', 0)}")
     else:
-        print(f"\n❌ ОШИБКА: {result.get('error')}")
+        print(f"\n❌ ERROR: {result.get('error')}")
 
     print("\n" + "=" * 60)
-    print("ПРОСТОЙ ЗАПРОС (для сравнения)")
+    print("SIMPLE REQUEST (for comparison)")
     print("=" * 60)
     result2 = jpx_simple_request()
 
-    print(f"\nРезультат простого запроса: {result2.get('success')}")
+    print(f"\nSimple request result: {result2.get('success')}")
